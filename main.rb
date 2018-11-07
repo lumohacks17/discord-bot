@@ -71,7 +71,7 @@ class Main
     num_messages = event.message.content.split(' ').drop(1).join(' ').to_i + 1
     member = event.server.members.find { |member| member.id == event.user.id }
 
-    if member.permission?(:administrator)
+    if member.permission?(:administrator) || member.roles.find { |role| role.name == "Mod" }
       if num_messages < 2 || num_messages > 100
         DiscordMessageSender.send_embedded(
           member.pm,
