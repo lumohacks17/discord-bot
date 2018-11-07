@@ -33,6 +33,16 @@ class Main
   end
 
   bot.command(:help) do |event|
+    begin
+      event.message.delete
+    rescue Discordrb::Errors::NoPermission
+      DiscordMessageSender.send_embedded(
+        event.user.pm,
+        title: "Error",
+        description: ":bangbang: Bot has insufficient permissions to delete your command message.",
+      )
+    end
+
     fields = []
     fields << Discordrb::Webhooks::EmbedField.new(
       name: "General Commands",
@@ -49,7 +59,7 @@ class Main
     )
 
     DiscordMessageSender.send_embedded(
-      event.channel,
+      event.user.pm,
       title: "Help Menu",
       description: "Note: Arguments in <this format> do not require the '<', '>' characters\n\u200B",
       fields: fields,
@@ -84,6 +94,16 @@ class Main
   end
 
   bot.command(:role) do |event|
+    begin
+      event.message.delete
+    rescue Discordrb::Errors::NoPermission
+      DiscordMessageSender.send_embedded(
+        event.user.pm,
+        title: "Error",
+        description: ":bangbang: Bot has insufficient permissions to delete your command message.",
+      )
+    end
+
     role_requested = event.message.content.split(' ')[2].upcase
 
     if event.server.nil?
@@ -124,18 +144,21 @@ class Main
       begin
         member.add_role(role_to_add)
         if role_to_add.name == "Matched"
-          DiscordMessageSender.send_embedded(
-            event.channel,
-            title: "Congratulations!!",
-            description: ":tada: :tada: Congratulations to #{member.name} for matching with a team!",
-            color: SUCCESS_COLOR,
-          )
+          general_channel = event.server.channels.find { |channel| channel.name == "general" }
+          unless general_channel.nil?
+            DiscordMessageSender.send_embedded(
+              server.channels.find { |channel| channel.name == "general" },
+              title: "Congratulations!!",
+              description: ":tada: :tada: Congratulations to #{member.name} for matching with a team!",
+              color: SUCCESS_COLOR,
+            )
+          end
         else
           previous_roles = member.roles.select { |role| (roles.values.include? role) && role != role_to_add && role.name != "Matched" }
           previous_roles.each { |role| member.remove_role(role) }
         end
         DiscordMessageSender.send_embedded(
-          event.channel,
+          member.pm,
           title: "Success",
           description: ":white_check_mark: The role was added to your profile.",
           color: SUCCESS_COLOR,
@@ -150,7 +173,7 @@ class Main
       end
     else
       DiscordMessageSender.send_embedded(
-        event.channel,
+        member.pm,
         title: "Error",
         description: ":bangbang: Bot was unable to find the associating role in the server. Please notify admin.",
         color: ERROR_COLOR,
