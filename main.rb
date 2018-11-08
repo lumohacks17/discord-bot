@@ -130,7 +130,7 @@ class Main
 
     if !(roles.include? role_requested)
       DiscordMessageSender.send_embedded(
-        event.channel,
+        member.pm,
         title: "Invalid Usage",
         description: ":bangbang: Invalid option. Please select from: `#{roles.keys.to_s}`",
         color: ERROR_COLOR,
