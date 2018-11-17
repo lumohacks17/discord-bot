@@ -25,7 +25,8 @@ class Main
   }
 
   $role_commands = {
-    "~role add <role>" => "add a role to your profile (interviewing, summer2019, fall2019, winter2019, matched, other)",
+    "~status add <status>" => "add your interview status to your profile (interviewing, summer2019, fall2019, winter2019, matched, other)",
+    "~location add <location>" => "add your office to your profile (newyork, mountainview, seattle, etc.)",
   }
 
   bot.ready() do |event|
@@ -93,7 +94,7 @@ class Main
     end 
   end
 
-  bot.command(:role) do |event|
+  bot.command(:status) do |event|
     begin
       event.message.delete
     rescue Discordrb::Errors::NoPermission
@@ -176,6 +177,103 @@ class Main
         member.pm,
         title: "Error",
         description: ":bangbang: Bot was unable to find the associating role in the server. Please notify admin.",
+        color: ERROR_COLOR,
+      )
+    end
+  end
+
+  bot.command(:location) do |event|
+    begin
+      event.message.delete
+    rescue Discordrb::Errors::NoPermission
+      DiscordMessageSender.send_embedded(
+        event.user.pm,
+        title: "Error",
+        description: ":bangbang: Bot has insufficient permissions to delete your command message.",
+      )
+    end
+
+    location_requested = event.message.content.split(' ')[2].upcase
+
+    if event.server.nil?
+      DiscordMessageSender.send_embedded(
+        event.user.pm,
+        title: "Invalid Usage",
+        description: ":bangbang: Please use this command in the server.",
+        color: ERROR_COLOR,
+      )
+      return
+    end
+
+    server = event.server
+    member = server.members.find { |member| member.id == event.user.id }
+
+    locations = {
+      "MOUNTAINVIEW" => server.roles.find { |role| role.name == "Mountain View"},
+      "SUNNYVALE" => server.roles.find { |role| role.name == "Sunnyvale"},
+      "SAN BRUNO" => server.roles.find { |role| role.name == "San Bruno"},
+      "IRVINE" => server.roles.find { |role| role.name == "Irvine"},
+      "LOS ANGELES" => server.roles.find { |role| role.name == "Los Angeles"},
+      "BOULDER" => server.roles.find { |role| role.name == "Boulder"},
+      "CHICAGO" => server.roles.find { |role| role.name == "Chicago"},
+      "CAMBRIDGE" => server.roles.find { |role| role.name == "Cambridge"},
+      "CHAPELHILL" => server.roles.find { |role| role.name == "Chapel Hill"},
+      "NEWYORK" => server.roles.find { |role| role.name == "New York"},
+      "WATERLOO" => server.roles.find { |role| role.name == "Waterloo"},
+      "PITTSBURGH" => server.roles.find { |role| role.name == "Pittsburgh"},
+      "MONTREAL" => server.roles.find { |role| role.name == "Montreal"},
+      "SEATTLE" => server.roles.find { |role| role.name == "Seattle"},
+      "MADISON" => server.roles.find { |role| role.name == "Madison"},
+    }
+
+    if !(locations.include? location_requested)
+      DiscordMessageSender.send_embedded(
+        member.pm,
+        title: "Invalid Usage",
+        description: ":bangbang: Invalid option. Please select from: `#{locations.keys.to_s}`",
+        color: ERROR_COLOR,
+      )
+      return
+    end
+
+    location_to_add = locations[location_requested]
+
+    if location_to_add
+      begin
+        member.add_role(location_to_add)
+        if location_to_add.name == "Matched"
+          general_channel = event.server.channels.find { |channel| channel.name == "general" }
+          unless general_channel.nil?
+            DiscordMessageSender.send_embedded(
+              server.channels.find { |channel| channel.name == "general" },
+              title: "Congratulations!!",
+              description: ":tada: :tada: Congratulations to #{member.name} for matching with a team!",
+              color: SUCCESS_COLOR,
+            )
+          end
+        else
+          previous_locations = member.roles.select { |role| (locations.values.include? role) && role != location_to_add }
+          previous_locations.each { |role| member.remove_role(role) }
+        end
+        DiscordMessageSender.send_embedded(
+          member.pm,
+          title: "Success",
+          description: ":white_check_mark: The location was added to your profile.",
+          color: SUCCESS_COLOR,
+        )
+      rescue Discordrb::Errors::NoPermission
+        DiscordMessageSender.send_embedded(
+          member.pm,
+          title: "Error",
+          description: ":bangbang: Bot has insufficient permissions to modify your locations. This may be because you're an admin. If not, contact the admin about this issue.",
+          color: ERROR_COLOR,
+        )
+      end
+    else
+      DiscordMessageSender.send_embedded(
+        member.pm,
+        title: "Error",
+        description: ":bangbang: Bot was unable to find the associating location in the server. Please notify admin.",
         color: ERROR_COLOR,
       )
     end
