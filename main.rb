@@ -11,8 +11,8 @@ class Main
   secrets = JSON.parse(File.read('secrets.json'))
 
   bot = Discordrb::Commands::CommandBot.new(
-    token: secrets["api_token"],
-    client_id: secrets["api_client_id"],
+    token: "wNWY7vmZFsqPwoaPB9rRY0mbx-NXQd5",
+    client_id: 499819124378304512,
     prefix: '~',
   )
 
